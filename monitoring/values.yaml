@@ -72,32 +72,7 @@ kube-state-metrics:
       value: infra
       effect: NoSchedule
 
-# ---- what gets scraped -----------------------------------------------------
-#
-# **One of the three jobs is missing, and writing it is yours.** Stage 3.1 of
-# the lab sheet walks you through it.
-#
-# **Do not add a cAdvisor job here.** The chart already ships one
-# (`kubernetes-nodes-cadvisor`) and a second would duplicate every container
-# series. That job is where throttling and working-set numbers come from, so do
-# not disable it either: without it the dashboard still draws and some numbers
-# are quietly zero, which looks exactly like a system behaving well.
 extraScrapeConfigs: |
-  # ---- YOUR JOB GOES HERE -------------------------------------------------
-  #
-  # Two jobs are given to you below. The one that scrapes your own
-  # application is not, and stage 3.1 of the lab sheet walks you through
-  # writing it: find the pods labelled app=epimetheus, scrape port 8080.
-  #
-  # cAdvisor is NOT here: the chart ships its own kubernetes-nodes-cadvisor
-  # job, which scrapes the same kubelet endpoint. A second one would only
-  # duplicate every container series.
-  #
-  # Add it above this line, at this indentation. Everything under
-  # `extraScrapeConfigs:` is one block of text handed to Prometheus as written,
-  # so the indentation is part of the meaning.
-  # --------------------------------------------------------------------------
-
   - job_name: pandora
     kubernetes_sd_configs:
       - role: pod
@@ -120,3 +95,18 @@ extraScrapeConfigs: |
       - source_labels: [__meta_kubernetes_pod_container_port_name]
         action: keep
         regex: metrics
+
+  - job_name: epimetheus
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: epimetheus
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: "8080"
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
